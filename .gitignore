@@ -21,7 +21,9 @@ ENV/
 .idea/
 .DS_Store
 *.swp
+*.log
 
 # --- Databases ---
 *.sqlite3
 *.db
+*.db-journal

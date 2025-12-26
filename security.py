@@ -1,15 +1,15 @@
 import logging
-
+import bcrypt
 import datetime
-from .database import user_table, database
-from passlib.context import CryptContext
+from database import user_table, database
 from fastapi import HTTPException, status
 from jose import jwt, JWTError, ExpiredSignatureError
 from typing import Literal
+import hashlib
 
 logger = logging.getLogger(__name__)
 
-pwd_context = CryptContext(schemes=["bcrypt"])
+
 
 SECRET_KEY = "9b73f2a1bdd7ae163444473d29a6885ffa22ab26117068f72a5a56a74d12d1fc"
 ALGORITHM = "HS256"
@@ -22,10 +22,24 @@ def create_credentials_exception(detail: str) -> HTTPException:
     )
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    # 1. Pre-hash with SHA-256 (gives a 64-character hex string)
+    # We encode it to bytes because bcrypt operates on bytes
+    password_pre_hash = hashlib.sha256(password.encode("utf-8")).hexdigest().encode("utf-8")
+    
+    # 2. Generate a salt and hash
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password_pre_hash, salt)
+    
+    # 3. Return as a string to store in the DB
+    return hashed_password.decode("utf-8")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    # 1. Pre-hash the incoming password exactly the same way
+    password_pre_hash = hashlib.sha256(plain_password.encode("utf-8")).hexdigest().encode("utf-8")
+    
+    # 2. Check the password against the stored hash
+    # .encode("utf-8") converts the stored string back to bytes for comparison
+    return bcrypt.checkpw(password_pre_hash, hashed_password.encode("utf-8"))
 
 def access_toekn_expire_minutes() -> int:
     return 30
@@ -43,7 +57,7 @@ def create_access_token(email) -> str:
 def create_confirmation_token(email) -> str:
     logger.debug("Creating access token", extra={"email":email})
     expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=confirm_toekn_expire_minutes())
-    jwt_data = {"sub": email , "exp":expire, "type":"confirm"}
+    jwt_data = {"sub": email , "exp":expire, "type":"confirmation"}
     encoded_jwt= jwt.encode(jwt_data, key=SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -57,7 +71,7 @@ async def get_user(email: str):
 
 async def authenticate_user(email: str, password: str):
     user = await get_user(email)
-    if not user or verify_password(password, user.password):
+    if not user or not verify_password(password, user.password):
         raise create_credentials_exception("Invalid email or password")
     if not user.confirmed:
         raise create_credentials_exception("User has not confirmed email")
