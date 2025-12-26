@@ -2,10 +2,11 @@ import logging
 import bcrypt
 import datetime
 from database import user_table, database
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from jose import jwt, JWTError, ExpiredSignatureError
-from typing import Literal
+from typing import Literal, Annotated
 import hashlib
+from fastapi.security import OAuth2PasswordBearer
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 SECRET_KEY = "9b73f2a1bdd7ae163444473d29a6885ffa22ab26117068f72a5a56a74d12d1fc"
 ALGORITHM = "HS256"
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def create_credentials_exception(detail: str) -> HTTPException:
     return HTTPException(
@@ -99,3 +101,11 @@ def get_subject_for_token_type(
         )
 
     return email
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    email = get_subject_for_token_type(token, "access")
+    user = await get_user(email=email)
+    if user is None:
+        raise create_credentials_exception("Could Not find user for this token")
+    return user
+

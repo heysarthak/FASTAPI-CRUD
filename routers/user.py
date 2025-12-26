@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import APIRouter, HTTPException,status, Request
+from fastapi import APIRouter, HTTPException,status, Request, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from database import user_table, database
 from models.user import UserIn
 from security import get_user, get_password_hash, authenticate_user, create_access_token, create_confirmation_token, get_subject_for_token_type
@@ -20,10 +21,10 @@ async def register(user: UserIn, request: Request):
     return {"detail": f"User Created, Please confirm {confirmation_url}"}
 
 @router.post("/token")
-async def login(user: UserIn):
-    user = await authenticate_user(user.email, user.password)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = await authenticate_user(form_data.username, form_data.password)  
     access_token = create_access_token(user.email)
-    return {"access_token":access_token, "token_type":"bearer"}
+    return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/confirm/{token}")
 async def confirm_email(token: str):

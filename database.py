@@ -13,6 +13,18 @@ user_table = sqlalchemy.Table(
     sqlalchemy.Column("confirmed", sqlalchemy.Boolean, default=False)
 )
 
+tasks = sqlalchemy.Table(
+    "tasks",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("title", sqlalchemy.String),
+    sqlalchemy.Column("status", sqlalchemy.Integer),
+    sqlalchemy.Column("end_date", sqlalchemy.DATETIME),
+    sqlalchemy.Column("owner_id", sqlalchemy.ForeignKey("users.id"), nullable=False),
+    sqlalchemy.CheckConstraint("status IN (0, 1, 2)", name="status_check"),
+    sqlalchemy.Index("idx_owner_status", "owner_id", "status")
+)
+
 engine = sqlalchemy.create_engine(
     config.DATABASE_URL, connect_args={"check_same_thread": False}
 )
