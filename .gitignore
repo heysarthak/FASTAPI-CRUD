@@ -1,0 +1,27 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# --- Environments ---
+# It is critical to ignore your virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# --- Environment Variables ---
+# Never commit your secrets!
+.env
+
+# --- OS & IDE ---
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# --- Databases ---
+*.sqlite3
+*.db
