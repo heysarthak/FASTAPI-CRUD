@@ -2,7 +2,7 @@ import os
 from typing import AsyncGenerator, Generator
 #from unittest.mock import AsyncMock, Mock
 
-import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import AsyncClient,ASGITransport
 
@@ -11,17 +11,17 @@ from myapp.database import database, user_table, tasks as task_table  # noqa: E4
 from myapp.main import app  # noqa: E402
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 def anyio_backend():
     return "asyncio"
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 def client() -> Generator:
     yield TestClient(app)
 
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def db():
     # If the app lifespan hasn't connected yet, we do it here
     if not database.is_connected:
@@ -33,7 +33,7 @@ async def db():
         await database.disconnect()
 
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def async_client(client) -> AsyncGenerator:
     # Use transport instead of app for newer HTTPX versions
     async with AsyncClient(
@@ -42,7 +42,7 @@ async def async_client(client) -> AsyncGenerator:
     ) as ac:
         yield ac
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def registered_user(async_client: AsyncClient) -> dict:
     user_details = {"email": "test@example.net", "password": "1234"}
     await async_client.post("/register", json=user_details)
@@ -51,7 +51,7 @@ async def registered_user(async_client: AsyncClient) -> dict:
     user_details["id"] = user.id
     return user_details
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def confirmed_user(registered_user: dict) -> dict:
     query = (
         user_table.update().where(user_table.c.email == registered_user["email"]).values(confirmed=True)
@@ -59,7 +59,7 @@ async def confirmed_user(registered_user: dict) -> dict:
     await database.execute(query)
     return registered_user
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def logged_in_token(async_client: AsyncClient, confirmed_user: dict) -> str:
     # OAuth2PasswordRequestForm expects form data, not JSON
     # It also specifically looks for 'username' and 'password'
@@ -75,7 +75,7 @@ async def logged_in_token(async_client: AsyncClient, confirmed_user: dict) -> st
     
     return response.json()["access_token"]
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def clear_db():
     # This runs BEFORE the test
     yield

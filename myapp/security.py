@@ -43,22 +43,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     # .encode("utf-8") converts the stored string back to bytes for comparison
     return bcrypt.checkpw(password_pre_hash, hashed_password.encode("utf-8"))
 
-def access_toekn_expire_minutes() -> int:
+def access_token_expire_minutes() -> int:
     return 30
 
-def confirm_toekn_expire_minutes() -> int:
+def confirm_token_expire_minutes() -> int:
     return 30
 
 def create_access_token(email) -> str:
     logger.debug("Creating access token", extra={"email":email})
-    expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=access_toekn_expire_minutes())
+    expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=access_token_expire_minutes())
     jwt_data = {"sub": email , "exp":expire, "type":"access"}
     encoded_jwt= jwt.encode(jwt_data, key=SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 def create_confirmation_token(email) -> str:
     logger.debug("Creating access token", extra={"email":email})
-    expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=confirm_toekn_expire_minutes())
+    expire = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=confirm_token_expire_minutes())
     jwt_data = {"sub": email , "exp":expire, "type":"confirmation"}
     encoded_jwt= jwt.encode(jwt_data, key=SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

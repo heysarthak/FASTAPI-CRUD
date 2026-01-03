@@ -1,5 +1,5 @@
 import pytest
-
+import pytest_asyncio
 from httpx import AsyncClient
 from myapp.models.task import TaskStatus
 
@@ -23,16 +23,16 @@ async def update_task(
     )
     return response.json()
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def created_task(async_client: AsyncClient, logged_in_token: str):
     return await create_task("Test Task", async_client, logged_in_token)
 
-@pytest.fixture()
+@pytest_asyncio.fixture()
 async def updated_task_with_status(async_client: AsyncClient, logged_in_token: str, created_task: dict):
     payload = {"status": TaskStatus.IN_PROGRESS}
     return await update_task(created_task["id"],payload, async_client,logged_in_token)
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_create_task(
     async_client: AsyncClient, confirmed_user: dict, logged_in_token: str
 ):
@@ -51,7 +51,7 @@ async def test_create_task(
         "owner_id": confirmed_user["id"]
     }.items() <= response.json().items()
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_get_task(
     async_client: AsyncClient, confirmed_user: dict, logged_in_token:str, created_task: dict
 ):    
@@ -64,7 +64,7 @@ async def test_get_task(
     assert created_task.items() <= response.json()[0].items()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_get_task_with_search(
         async_client: AsyncClient, confirmed_user:dict , logged_in_token:str,created_task: dict
 ):
@@ -77,7 +77,7 @@ async def test_get_task_with_search(
     assert response.status_code == 200
     assert created_task.items() <= response.json()[0].items()
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_empty_get_task_with_search(
     async_client: AsyncClient, confirmed_user:dict , logged_in_token:str,created_task: dict
 ):
@@ -90,7 +90,7 @@ async def test_empty_get_task_with_search(
     assert response.status_code == 200
     assert len(response.json()) == 0
     
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_patch_task_with_updated_status(
     async_client: AsyncClient, confirmed_user: dict, logged_in_token: str, updated_task_with_status: dict
 ):
@@ -104,7 +104,7 @@ async def test_patch_task_with_updated_status(
     assert updated_task_with_status.items() <= response.json()[0].items()
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_delete_task(
     async_client: AsyncClient, confirmed_user: dict, logged_in_token: str, created_task: dict
 ):
